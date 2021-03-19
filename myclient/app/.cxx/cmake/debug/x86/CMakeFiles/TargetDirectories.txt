@@ -1,0 +1,3 @@
+/home/sshchesnyak/Documents/Android-projects/myclient/app/.cxx/cmake/debug/x86/CMakeFiles/rebuild_cache.dir
+/home/sshchesnyak/Documents/Android-projects/myclient/app/.cxx/cmake/debug/x86/CMakeFiles/edit_cache.dir
+/home/sshchesnyak/Documents/Android-projects/myclient/app/.cxx/cmake/debug/x86/CMakeFiles/native-lib.dir
