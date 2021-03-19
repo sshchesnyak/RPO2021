@@ -32,6 +32,12 @@ public class PinpadActivity extends Activity {
             finish();
 
         });
+
+        findViewById(R.id.btnReset).setOnClickListener((View) -> {
+            pin="";
+            tvPin.setText("");
+        });
+
         findViewById(R.id.btnKey1).setOnClickListener((View v) -> {
             keyClick(v);
         });
