@@ -12,6 +12,15 @@ import android.widget.Toast;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.IOUtils;
+
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static android.provider.ContactsContract.CommonDataKinds.Website.URL;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -73,8 +82,51 @@ public class MainActivity extends AppCompatActivity {
         //String s = new String(Hex.encodeHex(dec)).toUpperCase();
         //Toast.makeText(this,s,Toast.LENGTH_SHORT).show();
         //C
-        Intent it = new Intent(this, ru.iu3.myclient.PinpadActivity.class);
-        startActivityForResult(it,0);
+        //Intent it = new Intent(this, ru.iu3.myclient.PinpadActivity.class);
+        //startActivityForResult(it,0);
+        TestHttpClient();
+    }
+
+    protected void TestHttpClient()
+    {
+        new Thread(()-> {
+            try {
+                //HttpURLConnection uc = (HttpURLConnection) (new URL("https://hub.iu3.bmstu.ru/moodle/my/").openConnection());
+                HttpURLConnection uc = (HttpURLConnection) (new URL("http://10.0.2.2:8081/api/v1/title").openConnection());
+                InputStream inputStream = uc.getInputStream();
+                String html = IOUtils.toString(inputStream);
+                String title = getPageTitle(html);
+                runOnUiThread(() ->
+                {
+                    Toast.makeText(this, title, Toast.LENGTH_SHORT).show();
+                });
+            } catch (Exception ex) {
+                Log.e("fapptag", "Http client failed, address issue", ex);
+            }
+        }).start();
+    }
+
+    private String getPageTitle(String html) {
+        /*int pos = html.indexOf("<title");
+        String p = "not found";
+        if (pos>=0)
+        {
+            int pos2 = html.indexOf("<",pos+1);
+            if (pos2>=0)
+                p=html.substring(pos+7,pos2);
+        }
+
+        return p;*/
+        Pattern pattern = Pattern.compile("<title>(.+?)</title>",Pattern.DOTALL);
+        Matcher matcher = pattern.matcher(html);
+        String p;
+        if (matcher.find())
+        {
+            p=matcher.group(1);
+        }
+        else
+            p="not found";
+        return p;
     }
 
     public native String stringFromJNI();
