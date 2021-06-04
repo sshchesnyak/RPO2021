@@ -5,14 +5,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import ru.iu3.rpo.backend.models.Artist;
 import ru.iu3.rpo.backend.models.Country;
 import ru.iu3.rpo.backend.repositories.CountryRepository;
+import ru.iu3.rpo.backend.repositories.ArtistRepository;
 
 import javax.validation.Valid;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -25,10 +24,20 @@ public class CountryController {
         return countryRepository.findAll();
     }
 
+    @GetMapping("/countries/{id}/artists")
+    public ResponseEntity<List<Artist>>getCountryArtists(@PathVariable(value="id") Long countryId) {
+        Optional<Country> cc = countryRepository.findById(countryId);
+        if (cc.isPresent())
+        {
+            return ResponseEntity.ok(cc.get().artists);
+        }
+        return ResponseEntity.ok(new ArrayList<Artist>());
+    }
+
     @PostMapping("/countries")
     public ResponseEntity<Object> createCountry(@Valid @RequestBody Country country) {
         try {
-            if (country.name.matches("[А-Я][а-я]*")) {
+            if (country.name.matches("[А-Я][а-я]+")) {
                 Country nc = countryRepository.save(country);
                 return ResponseEntity.ok(nc);
             }
@@ -55,7 +64,7 @@ public class CountryController {
         try {
             if (cc.isPresent()) {
                 country = cc.get();
-                if (countryDetails.name.matches("[А-Я][а-я]*")) {
+                if (countryDetails.name.matches("[А-Я][а-я]+")) {
                     country.name = countryDetails.name;
                     countryRepository.save(country);
                 }
