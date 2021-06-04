@@ -33,6 +33,7 @@ public class User {
     @Column(name="salt")
     public String salt;
 
+    @JsonIgnore
     @Column(name="token")
     public String token;
 
@@ -51,4 +52,5 @@ public class User {
         this.museums.remove(m);
         m.users.remove(this);
     }
+
 }
