@@ -26,6 +26,14 @@ class Utils {
         else
             return false
     }
+
+    getUser(){
+        let user = JSON.parse(localStorage.getItem('user'));
+        if (user!=null)
+            return user
+        else
+            return null
+    }
 }
 
 export default new Utils();

@@ -1,20 +1,28 @@
 import React from 'react';
 import './App.css';
-import {Switch,Route,BrowserRouter} from "react-router-dom";
+import {Switch,Route,BrowserRouter,Redirect} from "react-router-dom";
 import NavigationBar from "./components/NavigationBar";
 import Home from "./components/Home";
 import Login from "./components/Login"
+import Utils from "./utils/Utils";
+import {connect} from "react-redux";
 
+const AuthRoute = props => {
+    let user = Utils.getUser();
+    if (!user) return <Redirect to="/login"/>
+    return <Route {...props} />
+}
 
-function App(){
+function App(props){
 
   return (
       <div className="App">
           <BrowserRouter>
               <NavigationBar/>
               <div className="container-fluid">
+                  {props.error_message && <div className="alert alert-danger m-1">{props.error_message}</div>}
                   <Switch>
-                      <Route path="/home" component={Home}/>
+                      <AuthRoute path="/home" component={Home}/>
                       <Route path="/login" component={Login}/>
                   </Switch>
               </div>
@@ -23,4 +31,9 @@ function App(){
   );
 }
 
-export default App;
+function mapStateToProps(state){
+    const {msg}=state.alert;
+    return {error_message: msg};
+}
+
+export default connect(mapStateToProps)(App);
