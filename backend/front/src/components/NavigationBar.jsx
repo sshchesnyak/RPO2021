@@ -2,7 +2,7 @@ import React from "react";
 import {Navbar, Nav} from "react-bootstrap";
 import {withRouter, Link} from "react-router-dom"
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faHome,faUser} from '@fortawesome/free-solid-svg-icons'
+import {faHome,faUser,faBars} from '@fortawesome/free-solid-svg-icons'
 import Utils from "../utils/Utils";
 import BackendService from "../services/BackendService";
 import {connect} from "react-redux";
@@ -32,7 +32,8 @@ class NavigationBar extends React.Component {
         console.log(uname);
         return(
             <Navbar bg="Light" expand="lg">
-                <Navbar.Brand><FontAwesomeIcon icon={faHome}/>{' '}MyRPOProject</Navbar.Brand>
+                <button type="button" className="btn btn-outline-secondary mr-2" onClick={this.props.toggleSideBar}><FontAwesomeIcon icon={faBars}/></button>
+                <Navbar.Brand>{' '}MyRPOProject</Navbar.Brand>
                 <Navbar.Toggle aria-controls="basic-navbar-nav"/>
                 <Navbar.Collapse id="basic-navbar-nav">
                     <Nav className="mr-auto">
@@ -42,8 +43,8 @@ class NavigationBar extends React.Component {
                     </Nav>
                 </Navbar.Collapse>
                 <Navbar.Text>{this.props.user && this.props.user.name}</Navbar.Text>
-                {this.props.user && <Nav.Link onClick={this.logout}><FontAwesomeIcon icon={faUser} fixedWidth/>{' '+uname+' '}Выход</Nav.Link>}
-                {!this.props.user && <Nav.Link as={Link} to="/login"><FontAwesomeIcon icon={faUser} fixedWidth/>{' '}Вход</Nav.Link>}
+                {this.props.user && <Nav.Link onClick={this.logout}><FontAwesomeIcon icon={faUser} fixedWidth/>{' '+uname+' '}Log out</Nav.Link>}
+                {!this.props.user && <Nav.Link as={Link} to="/login"><FontAwesomeIcon icon={faUser} fixedWidth/>{' '}Log in</Nav.Link>}
             </Navbar>
         );
     }

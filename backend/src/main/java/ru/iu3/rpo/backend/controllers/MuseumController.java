@@ -17,6 +17,7 @@ import javax.validation.Valid;
 import java.util.*;
 import java.util.List;
 
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/v1")
 public class MuseumController {

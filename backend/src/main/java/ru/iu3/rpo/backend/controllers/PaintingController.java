@@ -15,6 +15,7 @@ import ru.iu3.rpo.backend.repositories.MuseumRepository;
 import javax.validation.Valid;
 import java.util.*;
 
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/v1")
 public class PaintingController {
