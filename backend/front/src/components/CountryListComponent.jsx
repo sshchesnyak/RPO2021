@@ -3,6 +3,7 @@ import BackendService from "../services/BackendService";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faPlus, faTrash, faEdit} from '@fortawesome/free-solid-svg-icons'
 import Alert from "./Alert";
+import PaginationComponent from "./PaginationComponent";
 
 class CountryListComponent extends Component {
 
@@ -14,18 +15,22 @@ class CountryListComponent extends Component {
             selected_countries: [],
             show_alert: false,
             checkedItems: [],
-            hidden: false
+            hidden: false,
+            page: 1,
+            limit: 2,
+            totalCount: 0
         }
 
-        this.refreshCountries = this.refreshCountries.bind(this)
-        this.updateCountryClicked = this.updateCountryClicked.bind(this)
-        this.addCountryClicked = this.addCountryClicked.bind(this)
-        this.onDelete = this.onDelete.bind(this)
-        this.closeAlert = this.closeAlert.bind(this)
-        this.handleCheckChange = this.handleCheckChange.bind(this)
-        this.handleGroupCheckChange = this.handleGroupCheckChange.bind(this)
-        this.setChecked = this.setChecked.bind(this)
-        this.deleteCountriesClicked = this.deleteCountriesClicked.bind(this)
+        this.refreshCountries = this.refreshCountries.bind(this);
+        this.updateCountryClicked = this.updateCountryClicked.bind(this);
+        this.addCountryClicked = this.addCountryClicked.bind(this);
+        this.onDelete = this.onDelete.bind(this);
+        this.closeAlert = this.closeAlert.bind(this);
+        this.handleCheckChange = this.handleCheckChange.bind(this);
+        this.handleGroupCheckChange = this.handleGroupCheckChange.bind(this);
+        this.setChecked = this.setChecked.bind(this);
+        this.deleteCountriesClicked = this.deleteCountriesClicked.bind(this);
+        this.onPageChanged = this.onPageChanged.bind(this);
     }
 
     setChecked(v){
@@ -77,19 +82,20 @@ class CountryListComponent extends Component {
         this.setState({show_alert: false});
     }
 
-    refreshCountries(){
-        BackendService.retrieveAllCountries()
+    refreshCountries(cp){
+        console.log("cp2",this.state.page)
+        BackendService.retrieveAllCountries(cp,this.state.limit)
             .then(
                 resp=>{
-                    this.setState({countries:resp.data, hidden: false});
+                    this.setState({countries:resp.data.content, totalCount: resp.data.totalPages+1, page: cp, hidden: false});
                 }
             )
-            .catch(()=>{this.setState({hidden:true})})
+            .catch(()=>{this.setState({totalCount: 0, hidden:true})})
             .finally(()=>this.setChecked(false))
     }
 
     componentDidMount() {
-        this.refreshCountries();
+        this.refreshCountries(0);
     }
 
     updateCountryClicked(id){
@@ -98,6 +104,10 @@ class CountryListComponent extends Component {
 
     addCountryClicked(){
         this.props.history.push(`/countries/-1`);
+    }
+
+    onPageChanged(cp){
+        this.refreshCountries(cp-1);
     }
 
     render(){
@@ -110,6 +120,11 @@ class CountryListComponent extends Component {
                     <button className="btn btn-outline-secondary ml-auto" onClick={this.deleteCountriesClicked}><FontAwesomeIcon icon={faTrash}/>{' '}Delete</button>
                 </div>
                 <div className="row my-2 mr-0">
+                    <PaginationComponent
+                        totalRecords={this.state.totalCount}
+                        pageLimit={this.state.limit}
+                        pageNeighbours={1}
+                        onPageChanged={this.onPageChanged}/>
                     <table className="table table-sm">
                         <thead className="thread-light">
                         <tr>

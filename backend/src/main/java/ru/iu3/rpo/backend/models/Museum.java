@@ -54,4 +54,8 @@ public class Museum {
         this.paintings.remove(p);
     }
 
+    public String getName(){
+        return this.name;
+    }
+
 }

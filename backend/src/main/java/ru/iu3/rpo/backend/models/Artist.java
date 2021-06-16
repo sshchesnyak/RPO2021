@@ -33,4 +33,8 @@ public class Artist {
     @OneToMany(mappedBy = "artist")
     public List<Painting> paintings = new ArrayList<Painting>();
 
+    public String getName(){
+        return this.name;
+    }
+
 }

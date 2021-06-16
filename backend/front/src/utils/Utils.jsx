@@ -29,11 +29,14 @@ class Utils {
 
     getUser(){
         let user = JSON.parse(localStorage.getItem('user'));
+        console.log("formulating answer");
+        console.log(user)
         if (user!=null)
             return user
         else
             return null
     }
+
 }
 
 export default new Utils();

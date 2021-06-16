@@ -1,6 +1,9 @@
 package ru.iu3.rpo.backend.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +25,11 @@ public class CountryController {
     CountryRepository countryRepository;
 
     @GetMapping("/countries")
+    public Page<Country> getAllCountries(@RequestParam("page") int page, @RequestParam("limit") int limit) {
+        return countryRepository.findAll(PageRequest.of(page,limit,Sort.by(Sort.Direction.ASC,"name")));
+    }
+
+    @GetMapping("/allcountries")
     public List<Country> getAllCountries() {
         return countryRepository.findAll();
     }
@@ -33,13 +41,9 @@ public class CountryController {
     }
 
     @GetMapping("/countries/{id}/artists")
-    public ResponseEntity<List<Artist>>getCountryArtists(@PathVariable(value="id") Long countryId) {
-        Optional<Country> cc = countryRepository.findById(countryId);
-        if (cc.isPresent())
-        {
-            return ResponseEntity.ok(cc.get().artists);
-        }
-        return ResponseEntity.ok(new ArrayList<Artist>());
+    public ResponseEntity<List<Artist>>getCountryArtists(@PathVariable(value="id") Long countryId) throws DataValidationException{
+        Country country = countryRepository.findById(countryId).orElseThrow(()->new DataValidationException("Country with the following id not found"));
+        return ResponseEntity.ok(country.artists);
     }
 
     @PostMapping("/countries")

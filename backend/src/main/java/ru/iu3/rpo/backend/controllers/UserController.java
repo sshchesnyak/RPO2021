@@ -1,14 +1,21 @@
 package ru.iu3.rpo.backend.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.codec.Hex;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import ru.iu3.rpo.backend.models.Country;
 import ru.iu3.rpo.backend.models.User;
 import ru.iu3.rpo.backend.models.Museum;
 import ru.iu3.rpo.backend.repositories.MuseumRepository;
 import ru.iu3.rpo.backend.repositories.UserRepository;
+import ru.iu3.rpo.backend.tools.DataValidationException;
+import ru.iu3.rpo.backend.tools.Utils;
 
 import javax.validation.Valid;
 import java.util.*;
@@ -24,12 +31,18 @@ public class UserController {
     MuseumRepository museumRepository;
 
     @GetMapping("/users")
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public Page<User> getAllUsers(@RequestParam("page") int page, @RequestParam("limit") int limit) {
+        return userRepository.findAll(PageRequest.of(page,limit, Sort.by(Sort.Direction.ASC,"login")));
+    }
+
+    @GetMapping("/users/{id}")
+    public ResponseEntity<User> getUser(@PathVariable(value="id") Long userId) throws DataValidationException {
+        User user = userRepository.findById(userId).orElseThrow(()->new DataValidationException("Museum with the following id not found"));
+        return ResponseEntity.ok(user);
     }
 
     @PostMapping("/users")
-    public ResponseEntity<Object> addUser(@Valid @RequestBody User user) {
+    public ResponseEntity<Object> addUser(@Valid @RequestBody User user) throws DataValidationException {
         try {
             if (user.email.matches("([A-Z]+|[a-z]+)@[a-z]+.[a-z]+")) {
                 User nu = userRepository.save(user);
@@ -38,104 +51,72 @@ public class UserController {
             else throw new Exception("Invalid email");
         }
         catch (Exception ex){
-            String error;
             if (ex.getMessage().contains("users.login_UNIQUE"))
-                error = "Login is already taken";
+                throw new DataValidationException("Login is already taken");
             if (ex.getMessage().contains("users.email_UNIQUE"))
-                error = "Email is already registered";
+                throw new DataValidationException("Email is already registered");
             else if (ex.getMessage().contains("Invalid email"))
-                error="Invalid email";
+                throw new DataValidationException("Invalid email");
             else
-                error = "Unidentified error";
-            Map<String, String> map = new HashMap<>();
-            map.put("error", error);
-            return ResponseEntity.ok(map);
+                throw new DataValidationException("Unidentified error");
         }
     }
 
     @PostMapping("/users/{id}/addmuseums")
-    public ResponseEntity<Object> addMuseums(@PathVariable(value="id") Long userId, @Valid @RequestBody Set<Museum> museums) {
-        Optional<User> cu = userRepository.findById(userId);
-        int cnt=0;
-        if (cu.isPresent()){
-            User u = cu.get();
-            for (Museum m : museums){
-                Optional<Museum> cm = museumRepository.findById(m.id);
-                if (cm.isPresent()){
-                    u.addMuseum(cm.get());
-                    cnt++;
-                }
-            }
-            userRepository.save(u);
+    public ResponseEntity<Object> addMuseums(@PathVariable(value="id") Long userId, @Valid @RequestBody Set<Museum> museums) throws DataValidationException{
+        User user = userRepository.findById(userId).orElseThrow(()->new DataValidationException("User with the following id not found"));
+        for (Museum m : museums){
+            Museum museum = museumRepository.findById(m.id).orElseThrow(()->new DataValidationException("Museum with the following id not found"));
+            user.addMuseum(museum);
         }
-        Map<String,String> response = new HashMap<>();
-        response.put("count",String.valueOf(cnt));
-        return ResponseEntity.ok(response);
+        userRepository.save(user);
+        return ResponseEntity.ok(user);
     }
 
     @PostMapping("/users/{id}/removemuseums")
-    public ResponseEntity<Object> removeMuseums(@PathVariable(value="id") Long userId, @Valid @RequestBody Set<Museum> museums){
-        Optional<User> cu = userRepository.findById(userId);
-        int cnt=0;
-        if (cu.isPresent()){
-            User u = cu.get();
-            for (Museum m : museums){
-                u.removeMuseum(m);
-                cnt++;
-            }
-            userRepository.save(u);
+    public ResponseEntity<Object> removeMuseums(@PathVariable(value="id") Long userId, @Valid @RequestBody Set<Museum> museums) throws DataValidationException{
+        User user = userRepository.findById(userId).orElseThrow(()->new DataValidationException("User with the following id not found"));
+        for (Museum m : museums){
+            user.removeMuseum(m);
         }
-        Map<String,String> response = new HashMap<>();
-        response.put("count",String.valueOf(cnt));
-        return ResponseEntity.ok(response);
+        userRepository.save(user);
+        return ResponseEntity.ok(user);
     }
 
     @PutMapping("/users/{id}")
-    public ResponseEntity<Object> editUserInfo(@PathVariable(value="id") Long countryId, @Valid @RequestBody User userDetails){
-        User user = null;
-        Optional<User> cu = userRepository.findById(countryId);
+    public ResponseEntity<Object> editUserInfo(@PathVariable(value="id") Long countryId, @Valid @RequestBody User userDetails) throws DataValidationException{
+        User user = userRepository.findById(countryId).orElseThrow(()->new DataValidationException("User with the following id not found"));
         try {
-            if (cu.isPresent()) {
-                user = cu.get();
-                if (userDetails.email.matches("([A-Z]+|[a-z]+)@[a-z]+.[a-z]+")) {
-                    user.login = userDetails.login;
-                    user.email = userDetails.email;
-                    userRepository.save(user);
+            if (userDetails.email.matches("([A-Z]+|[a-z]+)@[a-z]+.[a-z]+")) {
+                user.login = userDetails.login;
+                user.email = userDetails.email;
+                String np = userDetails.np;
+                if (np!=null && !np.isEmpty()){
+                    byte[] b = new byte[32];
+                    new Random().nextBytes(b);
+                    String salt = new String(Hex.encode(b));
+                    user.password= Utils.ComputeHash(np,salt);
+                    user.salt=salt;
                 }
-                else throw new Exception("Invalid email");
-            } else {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "user could not be found");
+                userRepository.save(user);
             }
+            else throw new Exception("Invalid email");
         }
         catch (Exception ex){
-            String error;
             if (ex.getMessage().contains("user could not be found"))
-                error = "user could not be found";
+                throw new DataValidationException("user could not be found");
             else if (ex.getMessage().contains("Invalid email"))
-                error="Invalid email";
+                throw new DataValidationException("Invalid email");
             else
-                error = "Unidentified error";
-            Map<String, String> map = new HashMap<>();
-            map.put("error", error);
-            return ResponseEntity.ok(map);
+                throw new DataValidationException("Unidentified error");
         }
         return ResponseEntity.ok(user);
     }
 
-    @DeleteMapping("/users/{id}")
-    public Map<String, Boolean> deleteUserInfo(@PathVariable(value="id") Long userId)
+    @PostMapping("/deleteusers")
+    public ResponseEntity deleteUserInfo(@Valid @RequestBody List<User> users)
     {
-        Optional<User> user = userRepository.findById(userId);
-        Map<String, Boolean> response = new HashMap<>();
-        if (user.isPresent())
-        {
-            userRepository.delete(user.get());
-            response.put("deleted", Boolean.TRUE);
-        }
-        else
-        {
-            response.put("deleted", Boolean.FALSE);
-        }
-        return response;
+        userRepository.deleteAll(users);
+        return new ResponseEntity(HttpStatus.OK);
     }
 }
